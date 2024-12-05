@@ -1,7 +1,11 @@
-import requests
 from decimal import Decimal
-import config
 from enum import Enum
+import okx.Account as Account
+
+API_KEY = ""
+SECRET_KEY = ""
+PASS_PHRASE = ""
+DEMO_TRADING_FLAG = "0" # 0: live trading, 1: demo trading
 
 class OrderSide(Enum):
     BUY = "BUY"
@@ -16,39 +20,14 @@ class ClientOrder:
         self.post_only = post_only
         self.client_id = client_id
 
-    def to_dict(self):
-        """Convert the order to a dictionary for API submission."""
-        return {
-            "symbol": self.symbol,
-            "side": self.side.value,
-            "limit_price": str(self.limit_price),
-            "quantity": str(self.quantity),
-            "post_only": self.post_only,
-            "client_id": self.client_id
-        }
+def get_balance(symbol: str, flag="1"):
+    account_api = Account.AccountAPI(API_KEY, SECRET_KEY, PASS_PHRASE, False, flag)
+    result = account_api.get_account_balance({"ccy": symbol})
+    return result
 
-class ApiClient:
-    def __init__(self):
-        self.base_url = config.API_BASE_URL
-        self.api_key = config.API_KEY
+def main():
+    print("hello")
+    print(get_balance("ETH", DEMO_TRADING_FLAG))
 
-    def send_order(self, order: ClientOrder):
-        """Send an order to the crypto exchange."""
-        url = f"{self.base_url}/orders"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        order_data = order.to_dict()
-
-        try:
-            response = requests.post(url, json=order_data, headers=headers)
-            if response.status_code == 200:
-                return {"status": "success", "order_id": response.json().get("order_id")}
-            else:
-                error_message = response.json().get("error", "Unknown error")
-                return {"status": "error", "reason": error_message}
-        except requests.exceptions.RequestException as e:
-            # Handle any request errors (e.g., network issues)
-            return {"status": "error", "reason": str(e)}
-
+if __name__ == "__main__":
+    main()
